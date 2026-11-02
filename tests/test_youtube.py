@@ -62,13 +62,13 @@ def test_fetch_retries_then_continues(tmp_path):
         open(out, "wb").write(b"x")
         return ok()
 
-    a, b = fetch([v("A"), v("B")], tmp_path, run=run, sleep=sleeps.append)
+    b, a = fetch([v("B"), v("A")], tmp_path, run=run, sleep=sleeps.append)
     assert "bot check" in a.error and a.path is None
     assert "--cookies-from-browser" in a.error
     assert b.path == str(tmp_path / "B.mp4") and b.error is None
     assert sum(c[-1].endswith("/A") for c in calls) == 4  # 1 try + 3 retries
     assert [s for s in sleeps if s > 2.0] == [5, 15, 45]
-    assert 2.0 in sleeps  # spacing before B's download
+    assert sleeps[0] == 2.0  # spacing before A's download, after B
 
 
 def test_fetch_uses_cache(tmp_path):
@@ -93,3 +93,39 @@ def test_fetch_passes_cookies_and_records_other_errors(tmp_path):
     i = calls[0].index("--cookies-from-browser")
     assert calls[0][i + 1] == "chrome"
     assert "Video unavailable" in a.error
+
+
+BOT = SimpleNamespace(returncode=1, stdout="", stderr="ERROR: HTTP Error 429: Too Many Requests")
+
+
+def test_fetch_stops_after_lasting_block(tmp_path):
+    calls = []
+
+    def run(cmd, **kw):
+        calls.append(cmd[-1])
+        return BOT
+
+    a, b, c = fetch([v("A"), v("B"), v("C")], tmp_path, run=run, sleep=lambda s: None)
+    assert len(calls) == 4 and all(u.endswith("/A") for u in calls)
+    assert "bot check" in a.error
+    assert "not fetched" in b.error and "not fetched" in c.error
+
+
+def test_list_shorts_metadata_retries_then_stops(tmp_path):
+    calls, sleeps = [], []
+    meta_ok = fake_listing([])
+
+    def run(cmd, **kw):
+        calls.append(cmd[-1])
+        if "--flat-playlist" in cmd or cmd[-1].endswith("/aaa"):
+            return meta_ok(cmd)
+        return BOT  # blocked from bbb on
+
+    videos = list_shorts("@cosipai", TODAY, run=run, sleep=sleeps.append)
+    by_id = {v.id: v for v in videos}
+    assert by_id["aaa"].error is None and by_id["aaa"].views == 1234
+    assert "bot check" in by_id["bbb"].error
+    assert "not checked" in by_id["new"].error
+    assert sum(u.endswith("/bbb") for u in calls) == 4
+    assert not any(u.endswith("/new") for u in calls)
+    assert sleeps == [5, 15, 45]
