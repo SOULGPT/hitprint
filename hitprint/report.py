@@ -25,8 +25,8 @@ def _frame(path: str, t: float) -> str | None:
 def _strip(v: Video, score: str) -> str:
     imgs = [f for f in (_frame(v.path, t) for t in (0, 0.25, 0.5, 0.75)) if f] if v.path else []
     tags = "".join(f'<img alt="" src="data:image/jpeg;base64,{b}">' for b in imgs)
-    return (f'<div class="strip">{tags}<span class="cap">{escape(v.title)}<br>'
-            f'{_fmt(getattr(v, score))} {escape(score)}</span></div>')
+    return (f'<div class="strip"><div class="frames">{tags}</div><div class="cap">{escape(v.title)}'
+            f'<b>{_fmt(getattr(v, score))} {escape(score.replace("_", " "))}</b></div></div>')
 
 
 def _fmt(x) -> str:
@@ -34,38 +34,43 @@ def _fmt(x) -> str:
         return "—"
     if isinstance(x, float):
         return f"{x:.2f}"
+    if isinstance(x, int) and not isinstance(x, bool):
+        return f"{x:,}"
     return escape(str(x))
 
 
 def _table(videos: list[Video], score: str) -> str:
     keys = sorted({k for v in videos for k in v.features})
-    head = ["title", score, "views", "uploaded", *keys]
+    extra = ["views"] if score != "views" else []  # don't show views twice
+    head = ["title", score, *extra, "uploaded", *keys]
     rows = []
     for v in videos:
-        cells = [escape(v.title), _fmt(getattr(v, score)), _fmt(v.views), _fmt(v.upload_date),
-                 *(_fmt(v.features.get(k)) for k in keys)]
+        cells = [escape(v.title), _fmt(getattr(v, score)), *(_fmt(v.views) for _ in extra),
+                 _fmt(v.upload_date), *(_fmt(v.features.get(k)) for k in keys)]
         rows.append("<tr>" + "".join(f"<td>{c}</td>" for c in cells) + "</tr>")
-    th = "".join(f"<th>{escape(h)}</th>" for h in head)
+    th = "".join(f"<th>{escape(h.replace('_', ' '))}</th>" for h in head)
     return f'<div class="scroll"><table><tr>{th}</tr>{"".join(rows)}</table></div>'
 
 
 def _html(videos: list[Video], rules: list[Rule], meta: dict) -> str:
     score = meta.get("score", "views")
     ok = [v for v in videos if v.error is None and getattr(v, score) is not None]
-    parts = [f'<header><h1>Your <span>hitprint</span></h1><p>{escape(str(meta.get("source", "")))} · '
-             f'{len(ok)} videos · {escape(str(meta.get("date", "")))}</p></header>']
+    parts = [f'<header><p class="kicker">Hitprint report</p><h1>Your <span>hitprint</span></h1>'
+             f'<p>{escape(str(meta.get("source", "")))} · {len(ok)} videos · '
+             f'{escape(str(meta.get("date", "")))}</p><p class="proof">{NOT_PROOF}</p></header>']
     for note in meta.get("notes", []):
         parts.append(f'<p class="muted">{escape(note)}</p>')
 
     if rules:
-        items = "".join(f"<li>{escape(r.text)}</li>" for r in rules[:5])
-        parts.append(f"<section><h2>Your hitprint</h2><ol>{items}</ol></section>")
+        items = "".join(f'<li><b class="ratio">{r.ratio:.1f}×</b><span>{escape(r.text)}</span></li>'
+                        for r in rules[:5])
+        parts.append(f'<section><h2>Your hitprint</h2><ol class="rules">{items}</ol></section>')
         fixes = [r for r in rules if r.fixable][:3]
         items = "".join(
             f"<li><strong>Make it so {escape(r.better)}.</strong> "
             f'<span class="muted">{r.ratio:.1f}× the {escape(score)}, based on '
             f"{r.n_better} vs {r.n_worse} videos.</span></li>" for r in fixes)
-        parts.append(f"<section><h2>Your next 3 fixes</h2><ol>{items or '<li>None of your patterns are things you can change.</li>'}</ol></section>")
+        parts.append(f"<section class='fixes'><h2>Your next 3 fixes</h2><ol>{items or '<li>None of your patterns are things you can change.</li>'}</ol></section>")
     else:
         parts.append(f"<section><h2>Your hitprint</h2><p>{NO_PATTERNS}</p></section>")
 
