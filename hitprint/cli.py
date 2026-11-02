@@ -16,7 +16,7 @@ MIN_VIDEOS = 10
 
 
 def _stats():
-    from . import stats  # Task 7: read_stats / collect_folder
+    from . import stats
     return stats
 
 
@@ -57,9 +57,6 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
             _err(f"Downloading {len(videos)} Shorts at 360p (cached in {a.out / 'cache'})…")
             videos = fetch(videos, a.out / "cache", cookies=a.cookies_from_browser)
-    except ModuleNotFoundError:
-        _err("Folder mode isn't available yet (hitprint.stats is missing).")
-        return 1
     except (Blocked, RuntimeError, OSError) as e:
         _err(f"hitprint: {e}")
         return 1

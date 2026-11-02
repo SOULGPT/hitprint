@@ -7,3 +7,4 @@ hitprint-out/
 demo-folder/
 .DS_Store
 *.egg-info/
+demo-out/
