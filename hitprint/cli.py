@@ -98,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     if fixes:
         print("Next fixes:")
         for r in fixes:
-            print(f"- Make it so {r.better}.")
+            print(f"- {r.advice}.")
     for name, path in paths.items():
         print(f"{name}: {path.resolve()}")
     if a.open:

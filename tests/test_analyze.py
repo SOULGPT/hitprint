@@ -25,6 +25,7 @@ def test_rule_found():
     assert r.median_better == 1000 and r.median_worse == 300
     assert r.confidence == pytest.approx(1.0)
     assert r.fixable is True
+    assert r.advice == "Cut within the first second"
 
 
 def test_min_group():
@@ -68,7 +69,7 @@ def test_series_prefix_not_fixable():
               + [vid(10 + i, 200, series_prefix=f"other {i} x") for i in range(6)])
     (r,) = find_rules(videos)
     assert r.feature == "series_prefix" and r.fixable is False
-    assert "what if you" in r.text
+    assert "what if you" in r.text and r.advice == 'Start the title with "what if you"'
 
 
 def test_weekend_split():
@@ -77,6 +78,7 @@ def test_weekend_split():
               + [vid(10 + i, 250, date=tue) for i in range(6)])
     (r,) = find_rules(videos)
     assert r.feature == "weekend" and "weekend" in r.better and r.fixable
+    assert r.advice == "Post on a weekend"
 
 
 def test_sorted_by_effect_times_confidence():

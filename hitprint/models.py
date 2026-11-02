@@ -28,3 +28,4 @@ class Rule:
     ratio: float
     confidence: float
     fixable: bool
+    advice: str  # the better side as direct advice, e.g. "Keep it under 25 seconds"

@@ -14,7 +14,8 @@ def videos(n=12, path=None):
 
 def rule(feature="first_cut_s", fixable=True):
     return Rule(feature, f"Shorts where {feature} is good get 2.1× the views (based on 9 vs 14 videos)",
-                f"{feature} is good", f"{feature} is bad", 9, 14, 2100, 1000, 2.1, 0.97, fixable)
+                f"{feature} is good", f"{feature} is bad", 9, 14, 2100, 1000, 2.1, 0.97, fixable,
+                f"Make {feature} good")
 
 
 def test_outputs_written(tmp_path):
@@ -26,9 +27,10 @@ def test_outputs_written(tmp_path):
     html = out["report"].read_text()
     assert "Your hitprint" in html and "not proof" in html
     assert "Your next 3 fixes" in html and "based on 9 vs 14 videos" in html
+    assert "<strong>Make first_cut_s good.</strong>" in html and "Make it so" not in html
     assert "@cosipai" in html and "12 videos" in html
     md = out["formula"].read_text()
-    assert "first_cut_s is good" in md and "9 vs 14" in md
+    assert "- Make first_cut_s good. My videos" in md and "9 vs 14" in md and "Make it so" not in md
     data = json.loads(out["data"].read_text())
     assert len(data["videos"]) == 12 and data["rules"][0]["ratio"] == 2.1
 

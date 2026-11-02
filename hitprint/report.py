@@ -67,7 +67,7 @@ def _html(videos: list[Video], rules: list[Rule], meta: dict) -> str:
         parts.append(f'<section><h2>Your hitprint</h2><ol class="rules">{items}</ol></section>')
         fixes = [r for r in rules if r.fixable][:3]
         items = "".join(
-            f"<li><strong>Make it so {escape(r.better)}.</strong> "
+            f"<li><strong>{escape(r.advice)}.</strong> "
             f'<span class="muted">{r.ratio:.1f}× the {escape(score)}, based on '
             f"{r.n_better} vs {r.n_worse} videos.</span></li>" for r in fixes)
         parts.append(f"<section class='fixes'><h2>Your next 3 fixes</h2><ol>{items or '<li>None of your patterns are things you can change.</li>'}</ol></section>")
@@ -100,7 +100,7 @@ def _formula(rules: list[Rule], meta: dict) -> str:
     if not rules:
         lines.append(NO_PATTERNS)
     for r in rules:
-        lines.append(f"- Make it so {r.better}. My videos like this get {r.ratio:.1f}× the "
+        lines.append(f"- {r.advice}. My videos like this get {r.ratio:.1f}× the "
                      f"{score} (based on {r.n_better} vs {r.n_worse} videos, "
                      f"{r.confidence:.0%} confidence).")
     lines += ["", NOT_PROOF, ""]
