@@ -129,3 +129,12 @@ def test_list_shorts_metadata_retries_then_stops(tmp_path):
     assert sum(u.endswith("/bbb") for u in calls) == 4
     assert not any(u.endswith("/new") for u in calls)
     assert sleeps == [5, 15, 45]
+
+
+def test_shorts_url_accepts_handles_and_channel_urls():
+    from hitprint.youtube import shorts_url
+    cid = "https://www.youtube.com/channel/UCI7DGfqFMeXh-wCMPWilInA"
+    assert shorts_url("cosipai") == "https://www.youtube.com/@cosipai/shorts"
+    assert shorts_url(cid) == cid + "/shorts"
+    assert shorts_url(cid + "/videos?view=0") == cid + "/shorts"
+    assert shorts_url("youtube.com/@cosipai/") == "https://youtube.com/@cosipai/shorts"

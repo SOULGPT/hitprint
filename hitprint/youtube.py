@@ -40,10 +40,20 @@ def _json(run, cmd: list[str], sleep) -> dict:
     return json.loads(r.stdout)
 
 
+def shorts_url(channel: str) -> str:
+    """A handle (@name or name) or any channel URL -> that channel's Shorts tab URL."""
+    if "youtube.com/" not in channel:
+        return f"https://www.youtube.com/{channel if channel.startswith('@') else '@' + channel}/shorts"
+    base = channel.split("?")[0].split("#")[0].rstrip("/")
+    base = base if "://" in base else "https://" + base
+    head, _, tab = base.rpartition("/")
+    if tab in ("shorts", "videos", "featured", "streams", "playlists", "community"):
+        base = head
+    return base + "/shorts"
+
+
 def list_shorts(handle: str, today: date, run=subprocess.run, sleep=time.sleep) -> list[Video]:
-    handle = handle if handle.startswith("@") else "@" + handle
-    listing = _json(run, ["yt-dlp", "--flat-playlist", "-J",
-                          f"https://www.youtube.com/{handle}/shorts"], sleep)
+    listing = _json(run, ["yt-dlp", "--flat-playlist", "-J", shorts_url(handle)], sleep)
     cutoff = (today - timedelta(days=MIN_AGE_DAYS)).strftime("%Y%m%d")
     videos, blocked = [], False
     for e in listing.get("entries") or []:
