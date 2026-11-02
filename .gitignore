@@ -1,0 +1,8 @@
+.demo/
+.venv/
+__pycache__/
+*.pyc
+hitprint-out/
+.cache/
+demo-folder/
+.DS_Store
